@@ -1,0 +1,50 @@
+before||BEFORE
+prior||BEFORE
+prior to||BEFORE
+precede by||BEFORE
+no later than||BEFORE
+follow by||AFTER
+after||AFTER
+later than||AFTER
+in||OVERLAP
+within||OVERLAP
+on||OVERLAP
+during||OVERLAP
+while||OVERLAP
+when||OVERLAP
+point in time is||OVERLAP
+at the time of||OVERLAP
+time point is||OVERLAP
+as of||OVERLAP
+as||OVERLAP
+in the year||OVERLAP
+on the date of||OVERLAP
+from||START
+since||START
+start||START
+start time||START
+start time is||START
+at the beginning of||START
+in the beginning of||START
+start in||START
+begin time||START
+begin on||START
+begin||START
+begin in||START
+open||START
+at the start of||START
+until||FINISH
+till||FINISH
+end time is||FINISH
+at the end of||FINISH
+conclusion time is||FINISH
+finished on||FINISH
+by||FINISH
+end||FINISH
+closure||FINISH
+end time||FINISH
+ending in||FINISH
+to||DURATION
+till||DURATION
+until||DURATION
+and||DURATION
