@@ -283,7 +283,7 @@ class Pipeline:
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         raise Exception(
-            "Usage: python benchmark/pipeline.py <FUNCTION> <PATH_TO_CONFIG>"
+            "Usage: python tiq/pipeline.py <FUNCTION> <PATH_TO_CONFIG>"
         )
 
     # load config

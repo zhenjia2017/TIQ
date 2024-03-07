@@ -2,8 +2,11 @@
 
 Description
 ------
-This repository contains the code and data of TIQ construction for our WWW'24 full paper "Faithful Temporal Question
+
+This code is for the TIQ benchmark proposed in our WWW'24 full paper "Faithful Temporal Question
 Answering over Heterogeneous Sources".
+Please visit the following repo [LINK](https://github.com/zhenjia2017/FAITH) to access the code for the FAITH method.
+
 In this paper, we construct a new benchmark with focus on implicit temporal questions.
 
 <div style="text-align: center;"><img src="2024-tiq-pipeline.png"  alt="overview" width=80% /></div>
