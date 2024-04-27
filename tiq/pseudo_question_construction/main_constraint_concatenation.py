@@ -41,6 +41,8 @@ class MainConstraintConcatenate:
         if main_timespan == constraint_timespan:
             return True
 
+        # When temporal values in both evidence and constraint are the year granularity, change the
+        # time point of beginning and end back into a year+0101. E.g., [20020101, 20231231]-->[20020101, 20230101]
         if "0101" in str(evi_begin)[-4:] and "1231" in str(evi_end)[-4:] and "0101" in str(constraint_start)[
                                                                                        -4:] and "1231" in str(
             constraint_end)[-4:]:
@@ -48,71 +50,75 @@ class MainConstraintConcatenate:
             evi_end = int(str(evi_end)[:-4] + "0101")
             constraint_end = int(str(constraint_end)[:-4] + "0101")
 
-        if "0101" in str(constraint_start)[-4:] and "1231" in str(constraint_end)[-4:] and "0101" in str(evi_begin)[
-                                                                                                     -4:] and "1231" in str(
-            evi_end)[-4:]:
-            # constraint a year
-            constraint_end = int(str(constraint_end)[:-4] + "0101")
-            evi_end = int(str(evi_end)[:-4] + "0101")
-
-        if evi_begin and evi_end and evi_begin == evi_end:
-            # evidence timespan is a specific day
-            if constraint_start != constraint_end:
-                # constraint timespan is not a specific day
-                return False
-            elif evi_begin == constraint_start and evi_end == constraint_end:
-                return True
-
-        if evi_begin and evi_end and evi_begin != evi_end:
-            if evi_begin == constraint_start and evi_end == constraint_end:
-                # evidence timespan contains constraint timespan
-                return True
-
-            if evi_begin < constraint_start and evi_end >= constraint_end:
-                # evidence timespan contains constraint timespan
-                return True
-            if evi_begin <= constraint_start and evi_end > constraint_end:
-                # evidence timespan contains constraint timespan
-                return True
-            if evi_begin <= constraint_start and evi_end > constraint_start and evi_end <= constraint_end:
-                return True
-            if evi_end >= constraint_end and evi_begin > constraint_start and evi_begin < constraint_end:
-                return True
-
-        return False
+        # In case that the temporal value in evidence is a duration begin time point or the end time point of evidence and constraint are same
+        if constraint_start <= evi_begin and constraint_end >= evi_end:
+            # temporal value of constraint includes temporal value of evidence
+            return True
+        if evi_begin <= constraint_start and evi_end >= constraint_end:
+            # temporal value of evidence includes temporal value of constraint
+            return True
+        if evi_begin <= constraint_start and evi_end > constraint_start and evi_end <= constraint_end:
+            # temporal values are overlap and start time of evidence is less than the start time of constraint
+            return True
+        if evi_end >= constraint_end and evi_begin > constraint_start and evi_begin < constraint_end:
+            # temporal values are overlap and start time of constraint is less than the start time of evidence
+            return True
 
     def is_year(self, start, end):
         if "0101" in str(start)[-4:] and "1231" in str(end)[-4:] and str(start)[0:4] == str(end)[0:4]:
             return True
 
+    def reason_after(self, main_timespan, constraint_timespan):
+        evi_begin = main_timespan[0]
+        evi_end = main_timespan[1]
+        constraint_start = constraint_timespan[0]
+        constraint_end = constraint_timespan[1]
+
+        if main_timespan == constraint_timespan:
+            return False
+
+        if "0101" in str(constraint_start)[-4:] and "1231" in str(constraint_end)[-4:] and "0101" in str(evi_begin)[
+                                                                                                         -4:]:
+            # temporal value of constraint is a year/years and start time in evidence is a year, change the temporal value
+            # of constraint into year granularity
+            constraint_end = int(str(constraint_end)[:-4] + "0101")
+
+        if evi_begin > constraint_end and evi_begin == evi_end and evi_begin - constraint_end < 3:
+            # For before/after: timespans not more than 1-2 years apart
+            # after relation in case the temporal value in evidence is a specific year or a specific day
+            # immediate after is not allowed
+            return True
+        if evi_begin >= constraint_end and evi_begin < evi_end and evi_begin - constraint_end < 3:
+            # For before/after: timespans not more than 1-2 years apart
+            # after relation in case the temporal value in evidence is a duration
+            # immediate after is allowed
+            return True
+
     def reason_before(self, main_timespan, constraint_timespan):
         evi_begin = main_timespan[0]
         evi_end = main_timespan[1]
-        if evi_end:
-            constraint_start = constraint_timespan[0]
-            constraint_end = constraint_timespan[1]
+        constraint_start = constraint_timespan[0]
+        constraint_end = constraint_timespan[1]
 
-            if main_timespan == constraint_timespan:
-                return False
+        if main_timespan == constraint_timespan:
+            # same temporal values of constraint and evidence never have before relation
+            return False
 
-            if "0101" in str(evi_begin)[-4:] and "1231" in str(evi_end)[-4:] and "0101" in str(constraint_start)[-4:]:
-                # evi_end is a year and constraint_start is a year
-                evi_end = int(str(evi_end)[:-4] + "0101")
+        if "0101" in str(evi_begin)[-4:] and "1231" in str(evi_end)[-4:] and "0101" in str(constraint_start)[-4:]:
+            # when temporal value of evidence is year/years and start time of constraint is a year, change the temporal value of
+            # evidence back to year granularity.
+            evi_end = int(str(evi_end)[:-4] + "0101")
 
-            if evi_begin:
-                if evi_end < constraint_start and evi_begin == evi_end and constraint_start - evi_end < 3:
-                    # start time is equal to end time
-                    return True
-                if evi_end <= constraint_start and evi_begin < evi_end and constraint_start - evi_end < 3:
-                    # start time is not equal to end time
-                    return True
-            if evi_end < constraint_start and constraint_start == constraint_end and constraint_start - evi_end < 3:
-                # start time is equal to end time
-                return True
-            if evi_end < constraint_start and constraint_start < constraint_end and constraint_start - evi_end < 3:
-                # start time is not equal to end time
-                return True
-        return False
+        if evi_end < constraint_start and evi_begin == evi_end and constraint_start - evi_end < 3:
+            # For before/after: timespans not more than 1-2 years apart
+            # before relation in case the temporal value in evidence is a specific year or a specific day
+            # immediate before is not allowed
+            return True
+        if evi_end <= constraint_start and evi_begin < evi_end and constraint_start - evi_end < 3:
+            # For before/after: timespans not more than 1-2 years apart
+            # before relation in general situations
+            # immediate before is allowed only in the case that the temporal value in evidence is a duration
+            return True
 
     def reason_signal(self, main_timespan, constraint_timespan):
         if self.reason_after(main_timespan, constraint_timespan):
@@ -124,35 +130,6 @@ class MainConstraintConcatenate:
         else:
             return None
 
-    def reason_after(self, main_timespan, constraint_timespan):
-        evi_begin = main_timespan[0]
-        evi_end = main_timespan[1]
-        if evi_begin:
-            constraint_start = constraint_timespan[0]
-            constraint_end = constraint_timespan[1]
-
-            if main_timespan == constraint_timespan:
-                return False
-
-            if "0101" in str(constraint_start)[-4:] and "1231" in str(constraint_end)[-4:] and "0101" in str(evi_begin)[
-                                                                                                         -4:]:
-                # constraint a year
-                constraint_end = int(str(constraint_end)[:-4] + "0101")
-
-            if evi_end:
-                if evi_begin > constraint_end and evi_begin == evi_end and evi_begin - constraint_end < 3:
-                    # start time is equal to end time
-                    # For before/after: timespans not more than 1-2 years apart
-                    return True
-                if evi_begin >= constraint_end and evi_begin < evi_end and evi_begin - constraint_end < 3:
-                    # start time is not equal to end time
-                    # For before/after: timespans not more than 1-2 years apart
-                    return True
-            if evi_begin > constraint_end and constraint_start == constraint_end and evi_begin - constraint_end < 3:
-                return True
-            if evi_begin > constraint_end and constraint_start < constraint_end and evi_begin - constraint_end < 3:
-                return True
-        return False
 
     def get_pair(self, group1, group2):
         pairs = []
@@ -256,6 +233,7 @@ class MainConstraintConcatenate:
                         if set([item["id"] for item in main_instance["answer_entity"]]).intersection(
                                 set([item["id"] for item in constraint_instance["wikidata_entities"]])):
                             continue
+
 
                         semantic_type = 0.0
                         if set([item["id"] for item in constraint_instance["wikidata_entities"]]).intersection(
